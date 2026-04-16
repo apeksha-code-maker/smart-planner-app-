@@ -37,7 +37,6 @@ MainView {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    // DAILY PLANNER BUTTON
                     Rectangle {
                         width: units.gu(25)
                         height: units.gu(6)
@@ -46,9 +45,7 @@ MainView {
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: {
-                                pageStack.push(plannerPage)
-                            }
+                            onClicked: pageStack.push(plannerPage)
                         }
 
                         Text {
@@ -59,7 +56,6 @@ MainView {
                         }
                     }
 
-                    // HABIT TRACKER BUTTON
                     Rectangle {
                         width: units.gu(25)
                         height: units.gu(6)
@@ -68,9 +64,7 @@ MainView {
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: {
-                                pageStack.push(habitPage)
-                            }
+                            onClicked: pageStack.push(habitPage)
                         }
 
                         Text {
@@ -81,7 +75,6 @@ MainView {
                         }
                     }
 
-                    // EXPENSE TRACKER BUTTON
                     Rectangle {
                         width: units.gu(25)
                         height: units.gu(6)
@@ -90,9 +83,7 @@ MainView {
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: {
-                                pageStack.push(expensePage)
-                            }
+                            onClicked: pageStack.push(expensePage)
                         }
 
                         Text {
@@ -106,7 +97,7 @@ MainView {
             }
         }
 
-        // DAILY PLANNER PAGE
+        // 🔥 ADVANCED DAILY PLANNER
         Component {
             id: plannerPage
 
@@ -115,10 +106,76 @@ MainView {
                     title: "Daily Planner"
                 }
 
-                Text {
-                    anchors.centerIn: parent
-                    text: "This is Daily Planner Screen"
-                    font.pixelSize: 24
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: units.gu(2)
+                    spacing: units.gu(2)
+
+                    TextField {
+                        id: taskInput
+                        placeholderText: "Enter task..."
+                    }
+
+                    ComboBox {
+                        id: priorityBox
+                        model: ["Low", "High"]
+                    }
+
+                    Button {
+                        text: "Add Task"
+                        onClicked: {
+                            if (taskInput.text !== "") {
+                                taskModel.append({
+                                    name: taskInput.text,
+                                    done: false,
+                                    priority: priorityBox.currentText
+                                })
+                                taskInput.text = ""
+                            }
+                        }
+                    }
+
+                    ListModel {
+                        id: taskModel
+                    }
+
+                    ListView {
+                        anchors.fill: parent
+                        model: taskModel
+
+                        delegate: Rectangle {
+                            width: parent.width
+                            height: units.gu(7)
+                            radius: 8
+                            color: priority === "High" ? "#FFCDD2" : "#C8E6C9"
+
+                            Row {
+                                anchors.fill: parent
+                                anchors.margins: units.gu(1)
+                                spacing: units.gu(1)
+
+                                CheckBox {
+                                    checked: done
+                                    onCheckedChanged: {
+                                        taskModel.setProperty(index, "done", checked)
+                                    }
+                                }
+
+                                Text {
+                                    text: name + " (" + priority + ")"
+                                    font.pixelSize: 16
+                                    color: done ? "gray" : "black"
+                                }
+
+                                Button {
+                                    text: "❌"
+                                    onClicked: {
+                                        taskModel.remove(index)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -134,7 +191,7 @@ MainView {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "This is Habit Tracker Screen"
+                    text: "Habit system coming soon 🔥"
                     font.pixelSize: 24
                 }
             }
@@ -151,7 +208,7 @@ MainView {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "This is Expense Tracker Screen"
+                    text: "Expense system coming soon 💰"
                     font.pixelSize: 24
                 }
             }
