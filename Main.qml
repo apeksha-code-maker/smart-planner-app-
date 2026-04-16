@@ -37,6 +37,7 @@ MainView {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
+                    // DAILY PLANNER BUTTON
                     Rectangle {
                         width: units.gu(25)
                         height: units.gu(6)
@@ -58,11 +59,19 @@ MainView {
                         }
                     }
 
+                    // HABIT TRACKER BUTTON
                     Rectangle {
                         width: units.gu(25)
                         height: units.gu(6)
                         radius: 12
                         color: "#2196F3"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                pageStack.push(habitPage)
+                            }
+                        }
 
                         Text {
                             anchors.centerIn: parent
@@ -72,11 +81,19 @@ MainView {
                         }
                     }
 
+                    // EXPENSE TRACKER BUTTON
                     Rectangle {
                         width: units.gu(25)
                         height: units.gu(6)
                         radius: 12
                         color: "#FF9800"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                pageStack.push(expensePage)
+                            }
+                        }
 
                         Text {
                             anchors.centerIn: parent
@@ -89,7 +106,7 @@ MainView {
             }
         }
 
-        // SECOND PAGE
+        // DAILY PLANNER PAGE
         Component {
             id: plannerPage
 
@@ -101,6 +118,40 @@ MainView {
                 Text {
                     anchors.centerIn: parent
                     text: "This is Daily Planner Screen"
+                    font.pixelSize: 24
+                }
+            }
+        }
+
+        // HABIT TRACKER PAGE
+        Component {
+            id: habitPage
+
+            Page {
+                header: PageHeader {
+                    title: "Habit Tracker"
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "This is Habit Tracker Screen"
+                    font.pixelSize: 24
+                }
+            }
+        }
+
+        // EXPENSE TRACKER PAGE
+        Component {
+            id: expensePage
+
+            Page {
+                header: PageHeader {
+                    title: "Expense Tracker"
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "This is Expense Tracker Screen"
                     font.pixelSize: 24
                 }
             }
