@@ -27,20 +27,26 @@ MainView {
                 color: "#2E7D32"
                 anchors.horizontalCenter: parent.horizontalCenter
             }
+Rectangle {
+    width: units.gu(25)
+    height: units.gu(6)
+    radius: 12
+    color: "#4CAF50"
 
-            Rectangle {
-                width: units.gu(25)
-                height: units.gu(6)
-                radius: 12
-                color: "#4CAF50"
+    MouseArea {
+        anchors.fill: parent
+        onClicked: {
+            console.log("Daily Planner clicked")
+        }
+    }
 
-                Text {
-                    anchors.centerIn: parent
-                    text: "Daily Planner"
-                    color: "white"
-                    font.pixelSize: 18
-                }
-            }
+    Text {
+        anchors.centerIn: parent
+        text: "Daily Planner"
+        color: "white"
+        font.pixelSize: 18
+    }
+}
 
             Rectangle {
                 width: units.gu(25)
