@@ -12,7 +12,6 @@ MainView {
 
     PageStack {
         id: pageStack
-
         Component.onCompleted: push(mainPage)
 
         // ---------------- MAIN PAGE ----------------
@@ -20,9 +19,7 @@ MainView {
             id: mainPage
 
             Page {
-                header: PageHeader {
-                    title: "Smart Planner"
-                }
+                header: PageHeader { title: "Smart Planner" }
 
                 Column {
                     anchors.centerIn: parent
@@ -80,9 +77,23 @@ MainView {
                     });
                 }
 
+                function updateTask(name, done) {
+                    var db = getDatabase();
+                    db.transaction(function(tx) {
+                        tx.executeSql('UPDATE tasks SET done=? WHERE name=?', [done, name]);
+                    });
+                }
+
+                function deleteTask(name) {
+                    var db = getDatabase();
+                    db.transaction(function(tx) {
+                        tx.executeSql('DELETE FROM tasks WHERE name=?', [name]);
+                    });
+                }
+
                 function loadTasks() {
                     var db = getDatabase();
-                    taskModel.clear(); // prevent duplicates
+                    taskModel.clear();
                     db.transaction(function(tx) {
                         var results = tx.executeSql('SELECT * FROM tasks');
                         for (var i = 0; i < results.rows.length; i++) {
@@ -112,7 +123,7 @@ MainView {
                         placeholderText: "Enter task..."
                     }
 
-                    ComboBox {
+                    OptionSelector {
                         id: priorityBox
                         model: ["Low", "High"]
                     }
@@ -121,13 +132,16 @@ MainView {
                         text: "Add Task"
                         onClicked: {
                             if (taskInput.text !== "") {
+
+                                var priority = priorityBox.model[priorityBox.selectedIndex]
+
                                 taskModel.append({
                                     name: taskInput.text,
                                     done: false,
-                                    priority: priorityBox.currentText
+                                    priority: priority
                                 })
 
-                                insertTask(taskInput.text, 0, priorityBox.currentText)
+                                insertTask(taskInput.text, 0, priority)
                                 taskInput.text = ""
                             }
                         }
@@ -154,6 +168,7 @@ MainView {
                                     checked: done
                                     onCheckedChanged: {
                                         taskModel.setProperty(index, "done", checked)
+                                        updateTask(name, checked ? 1 : 0)
                                     }
                                 }
 
@@ -165,7 +180,10 @@ MainView {
 
                                 Button {
                                     text: "❌"
-                                    onClicked: taskModel.remove(index)
+                                    onClicked: {
+                                        deleteTask(name)
+                                        taskModel.remove(index)
+                                    }
                                 }
                             }
                         }
@@ -180,7 +198,6 @@ MainView {
 
             Page {
                 header: PageHeader { title: "Habit Tracker" }
-
                 Text {
                     anchors.centerIn: parent
                     text: "Habit system coming soon 🔥"
@@ -195,7 +212,6 @@ MainView {
 
             Page {
                 header: PageHeader { title: "Expense Tracker" }
-
                 Text {
                     anchors.centerIn: parent
                     text: "Expense system coming soon 💰"
