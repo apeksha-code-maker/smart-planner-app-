@@ -1,9 +1,9 @@
 import QtQuick 2.7
 import Lomiri.Components 1.3
+import QtQuick.LocalStorage 2.0
 
 MainView {
     id: root
-    objectName: "mainView"
     applicationName: "smartplanner.apek"
     automaticOrientation: true
 
@@ -17,7 +17,7 @@ MainView {
             push(mainPage)
         }
 
-        // MAIN PAGE
+        // ---------------- MAIN PAGE ----------------
         Component {
             id: mainPage
 
@@ -37,71 +37,97 @@ MainView {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    Rectangle {
-                        width: units.gu(25)
-                        height: units.gu(6)
-                        radius: 12
-                        color: "#4CAF50"
+                    function navButton(text, color, targetPage) {
+                        return Rectangle {
+                            width: units.gu(25)
+                            height: units.gu(6)
+                            radius: 12
+                            color: color
 
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: pageStack.push(plannerPage)
-                        }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: pageStack.push(targetPage)
+                            }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Daily Planner"
-                            color: "white"
-                            font.pixelSize: 18
-                        }
-                    }
-
-                    Rectangle {
-                        width: units.gu(25)
-                        height: units.gu(6)
-                        radius: 12
-                        color: "#2196F3"
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: pageStack.push(habitPage)
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Habit Tracker"
-                            color: "white"
-                            font.pixelSize: 18
+                            Text {
+                                anchors.centerIn: parent
+                                text: text
+                                color: "white"
+                                font.pixelSize: 18
+                            }
                         }
                     }
 
+                    Component.onCompleted: {
+                        // Just for structure clarity
+                    }
+
+                    // Buttons
                     Rectangle {
-                        width: units.gu(25)
-                        height: units.gu(6)
-                        radius: 12
-                        color: "#FF9800"
+                        width: units.gu(25); height: units.gu(6); radius: 12; color: "#4CAF50"
+                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(plannerPage) }
+                        Text { anchors.centerIn: parent; text: "Daily Planner"; color: "white" }
+                    }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: pageStack.push(expensePage)
-                        }
+                    Rectangle {
+                        width: units.gu(25); height: units.gu(6); radius: 12; color: "#2196F3"
+                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(habitPage) }
+                        Text { anchors.centerIn: parent; text: "Habit Tracker"; color: "white" }
+                    }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Expense Tracker"
-                            color: "white"
-                            font.pixelSize: 18
-                        }
+                    Rectangle {
+                        width: units.gu(25); height: units.gu(6); radius: 12; color: "#FF9800"
+                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(expensePage) }
+                        Text { anchors.centerIn: parent; text: "Expense Tracker"; color: "white" }
                     }
                 }
             }
         }
 
-        // 🔥 ADVANCED DAILY PLANNER
+        // ---------------- PLANNER PAGE ----------------
         Component {
             id: plannerPage
 
             Page {
+
+                // -------- DATABASE FUNCTIONS --------
+                function getDatabase() {
+                    return LocalStorage.openDatabaseSync("SmartPlannerDB", "1.0", "Tasks DB", 1000000);
+                }
+
+                function createTable() {
+                    var db = getDatabase();
+                    db.transaction(function(tx) {
+                        tx.executeSql('CREATE TABLE IF NOT EXISTS tasks(name TEXT, done INTEGER, priority TEXT)');
+                    });
+                }
+
+                function insertTask(name, done, priority) {
+                    var db = getDatabase();
+                    db.transaction(function(tx) {
+                        tx.executeSql('INSERT INTO tasks VALUES(?, ?, ?)', [name, done, priority]);
+                    });
+                }
+
+                function loadTasks() {
+                    var db = getDatabase();
+                    db.transaction(function(tx) {
+                        var results = tx.executeSql('SELECT * FROM tasks');
+                        for (var i = 0; i < results.rows.length; i++) {
+                            taskModel.append({
+                                name: results.rows.item(i).name,
+                                done: results.rows.item(i).done,
+                                priority: results.rows.item(i).priority
+                            });
+                        }
+                    });
+                }
+
+                Component.onCompleted: {
+                    createTable()
+                    loadTasks()
+                }
+
                 header: PageHeader {
                     title: "Daily Planner"
                 }
@@ -125,11 +151,15 @@ MainView {
                         text: "Add Task"
                         onClicked: {
                             if (taskInput.text !== "") {
+
                                 taskModel.append({
                                     name: taskInput.text,
                                     done: false,
                                     priority: priorityBox.currentText
                                 })
+
+                                insertTask(taskInput.text, 0, priorityBox.currentText)
+
                                 taskInput.text = ""
                             }
                         }
@@ -180,14 +210,12 @@ MainView {
             }
         }
 
-        // HABIT TRACKER PAGE
+        // ---------------- HABIT PAGE ----------------
         Component {
             id: habitPage
 
             Page {
-                header: PageHeader {
-                    title: "Habit Tracker"
-                }
+                header: PageHeader { title: "Habit Tracker" }
 
                 Text {
                     anchors.centerIn: parent
@@ -197,14 +225,12 @@ MainView {
             }
         }
 
-        // EXPENSE TRACKER PAGE
+        // ---------------- EXPENSE PAGE ----------------
         Component {
             id: expensePage
 
             Page {
-                header: PageHeader {
-                    title: "Expense Tracker"
-                }
+                header: PageHeader { title: "Expense Tracker" }
 
                 Text {
                     anchors.centerIn: parent
