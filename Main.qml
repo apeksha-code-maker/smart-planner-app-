@@ -4,7 +4,7 @@ import QtQuick.LocalStorage 2.0
 
 MainView {
     id: root
-    applicationName: "smartplanner.apek"
+    applicationName: "smartplanner"
     automaticOrientation: true
 
     width: units.gu(45)
@@ -13,9 +13,7 @@ MainView {
     PageStack {
         id: pageStack
 
-        Component.onCompleted: {
-            push(mainPage)
-        }
+        Component.onCompleted: push(mainPage)
 
         // ---------------- MAIN PAGE ----------------
         Component {
@@ -37,32 +35,6 @@ MainView {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    function navButton(text, color, targetPage) {
-                        return Rectangle {
-                            width: units.gu(25)
-                            height: units.gu(6)
-                            radius: 12
-                            color: color
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: pageStack.push(targetPage)
-                            }
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: text
-                                color: "white"
-                                font.pixelSize: 18
-                            }
-                        }
-                    }
-
-                    Component.onCompleted: {
-                        // Just for structure clarity
-                    }
-
-                    // Buttons
                     Rectangle {
                         width: units.gu(25); height: units.gu(6); radius: 12; color: "#4CAF50"
                         MouseArea { anchors.fill: parent; onClicked: pageStack.push(plannerPage) }
@@ -90,7 +62,6 @@ MainView {
 
             Page {
 
-                // -------- DATABASE FUNCTIONS --------
                 function getDatabase() {
                     return LocalStorage.openDatabaseSync("SmartPlannerDB", "1.0", "Tasks DB", 1000000);
                 }
@@ -111,6 +82,7 @@ MainView {
 
                 function loadTasks() {
                     var db = getDatabase();
+                    taskModel.clear(); // prevent duplicates
                     db.transaction(function(tx) {
                         var results = tx.executeSql('SELECT * FROM tasks');
                         for (var i = 0; i < results.rows.length; i++) {
@@ -124,13 +96,11 @@ MainView {
                 }
 
                 Component.onCompleted: {
-                    createTable()
-                    loadTasks()
+                    createTable();
+                    loadTasks();
                 }
 
-                header: PageHeader {
-                    title: "Daily Planner"
-                }
+                header: PageHeader { title: "Daily Planner" }
 
                 Column {
                     anchors.fill: parent
@@ -151,7 +121,6 @@ MainView {
                         text: "Add Task"
                         onClicked: {
                             if (taskInput.text !== "") {
-
                                 taskModel.append({
                                     name: taskInput.text,
                                     done: false,
@@ -159,15 +128,12 @@ MainView {
                                 })
 
                                 insertTask(taskInput.text, 0, priorityBox.currentText)
-
                                 taskInput.text = ""
                             }
                         }
                     }
 
-                    ListModel {
-                        id: taskModel
-                    }
+                    ListModel { id: taskModel }
 
                     ListView {
                         anchors.fill: parent
@@ -199,9 +165,7 @@ MainView {
 
                                 Button {
                                     text: "❌"
-                                    onClicked: {
-                                        taskModel.remove(index)
-                                    }
+                                    onClicked: taskModel.remove(index)
                                 }
                             }
                         }
