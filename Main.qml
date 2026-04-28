@@ -2,6 +2,12 @@ import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.LocalStorage 2.0
 
+Text {
+    text: "VERSION 2 🔥"
+    color: "red"
+    font.pixelSize: 20
+}
+
 MainView {
     id: root
     applicationName: "smartplanner"
