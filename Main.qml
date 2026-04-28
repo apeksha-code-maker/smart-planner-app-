@@ -27,28 +27,36 @@ MainView {
 
                     Text {
                         text: "Welcome 👋"
-                        font.pixelSize: 32
+                        font.pixelSize: 30
+                        font.bold: true
                         color: "#2E7D32"
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    Rectangle {
-                        width: units.gu(25); height: units.gu(6); radius: 12; color: "#4CAF50"
-                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(plannerPage) }
-                        Text { anchors.centerIn: parent; text: "Daily Planner"; color: "white" }
+                    function navButton(text, color, page) {
+                        return Rectangle {
+                            width: units.gu(25)
+                            height: units.gu(6)
+                            radius: 12
+                            color: color
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: pageStack.push(page)
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: text
+                                color: "white"
+                                font.pixelSize: 18
+                            }
+                        }
                     }
 
-                    Rectangle {
-                        width: units.gu(25); height: units.gu(6); radius: 12; color: "#2196F3"
-                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(habitPage) }
-                        Text { anchors.centerIn: parent; text: "Habit Tracker"; color: "white" }
-                    }
-
-                    Rectangle {
-                        width: units.gu(25); height: units.gu(6); radius: 12; color: "#FF9800"
-                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(expensePage) }
-                        Text { anchors.centerIn: parent; text: "Expense Tracker"; color: "white" }
-                    }
+                    navButton("Daily Planner", "#4CAF50", plannerPage)
+                    navButton("Habit Tracker", "#2196F3", habitPage)
+                    navButton("Expense Tracker", "#FF9800", expensePage)
                 }
             }
         }
@@ -132,7 +140,6 @@ MainView {
                         text: "Add Task"
                         onClicked: {
                             if (taskInput.text !== "") {
-
                                 var priority = priorityBox.model[priorityBox.selectedIndex]
 
                                 taskModel.append({
@@ -174,8 +181,6 @@ MainView {
 
                                 Text {
                                     text: name + " (" + priority + ")"
-                                    font.pixelSize: 16
-                                    color: done ? "gray" : "black"
                                 }
 
                                 Button {
@@ -198,10 +203,50 @@ MainView {
 
             Page {
                 header: PageHeader { title: "Habit Tracker" }
-                Text {
-                    anchors.centerIn: parent
-                    text: "Habit system coming soon 🔥"
-                    font.pixelSize: 24
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: units.gu(2)
+                    spacing: units.gu(2)
+
+                    Text {
+                        text: "Track Your Habits"
+                        font.pixelSize: 24
+                    }
+
+                    ListModel {
+                        id: habitModel
+                        ListElement { name: "Drink Water"; done: false }
+                        ListElement { name: "Exercise"; done: false }
+                        ListElement { name: "Read Book"; done: false }
+                    }
+
+                    ListView {
+                        anchors.fill: parent
+                        model: habitModel
+
+                        delegate: Rectangle {
+                            width: parent.width
+                            height: units.gu(6)
+                            radius: 10
+                            color: "#E3F2FD"
+
+                            Row {
+                                anchors.fill: parent
+                                anchors.margins: units.gu(1)
+
+                                CheckBox {
+                                    checked: done
+                                    onCheckedChanged: habitModel.setProperty(index, "done", checked)
+                                }
+
+                                Text {
+                                    text: name
+                                    font.pixelSize: 18
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -212,10 +257,58 @@ MainView {
 
             Page {
                 header: PageHeader { title: "Expense Tracker" }
-                Text {
-                    anchors.centerIn: parent
-                    text: "Expense system coming soon 💰"
-                    font.pixelSize: 24
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: units.gu(2)
+                    spacing: units.gu(2)
+
+                    TextField {
+                        id: expenseName
+                        placeholderText: "Expense name"
+                    }
+
+                    TextField {
+                        id: expenseAmount
+                        placeholderText: "Amount"
+                    }
+
+                    Button {
+                        text: "Add Expense"
+                        onClicked: {
+                            if (expenseName.text !== "" && expenseAmount.text !== "") {
+                                expenseModel.append({
+                                    name: expenseName.text,
+                                    amount: expenseAmount.text
+                                })
+                                expenseName.text = ""
+                                expenseAmount.text = ""
+                            }
+                        }
+                    }
+
+                    ListModel { id: expenseModel }
+
+                    ListView {
+                        anchors.fill: parent
+                        model: expenseModel
+
+                        delegate: Rectangle {
+                            width: parent.width
+                            height: units.gu(6)
+                            radius: 10
+                            color: "#FFF3E0"
+
+                            Row {
+                                anchors.fill: parent
+                                anchors.margins: units.gu(1)
+                                spacing: units.gu(2)
+
+                                Text { text: name }
+                                Text { text: "₹ " + amount; color: "green" }
+                            }
+                        }
+                    }
                 }
             }
         }
