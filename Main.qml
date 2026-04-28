@@ -32,55 +32,25 @@ MainView {
                         color: "#2E7D32"
                     }
 
-                    // Planner
                     Rectangle {
                         width: units.gu(25); height: units.gu(6)
                         radius: 12; color: "#4CAF50"
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: pageStack.push(plannerPage)
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Daily Planner"
-                            color: "white"
-                        }
+                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(plannerPage) }
+                        Text { anchors.centerIn: parent; text: "Daily Planner"; color: "white" }
                     }
 
-                    // Habit
                     Rectangle {
                         width: units.gu(25); height: units.gu(6)
                         radius: 12; color: "#2196F3"
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: pageStack.push(habitPage)
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Habit Tracker"
-                            color: "white"
-                        }
+                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(habitPage) }
+                        Text { anchors.centerIn: parent; text: "Habit Tracker"; color: "white" }
                     }
 
-                    // Expense
                     Rectangle {
                         width: units.gu(25); height: units.gu(6)
                         radius: 12; color: "#FF9800"
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: pageStack.push(expensePage)
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Expense Tracker"
-                            color: "white"
-                        }
+                        MouseArea { anchors.fill: parent; onClicked: pageStack.push(expensePage) }
+                        Text { anchors.centerIn: parent; text: "Expense Tracker"; color: "white" }
                     }
                 }
             }
@@ -100,15 +70,18 @@ MainView {
                     var db = getDB();
                     db.transaction(function(tx) {
                         tx.executeSql(
-                            'CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, done INTEGER)'
+                            'CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT, date TEXT, time TEXT, done INTEGER)'
                         );
                     });
                 }
 
-                function addTask(name) {
+                function addTask(name, desc, date, time) {
                     var db = getDB();
                     db.transaction(function(tx) {
-                        tx.executeSql('INSERT INTO tasks(name, done) VALUES(?,0)', [name]);
+                        tx.executeSql(
+                            'INSERT INTO tasks(name, description, date, time, done) VALUES(?,?,?,?,0)',
+                            [name, desc, date, time]
+                        );
                     });
                 }
 
@@ -137,6 +110,9 @@ MainView {
                             taskModel.append({
                                 id: row.id,
                                 name: row.name,
+                                description: row.description,
+                                date: row.date,
+                                time: row.time,
                                 done: row.done
                             });
                         }
@@ -155,18 +131,21 @@ MainView {
                     anchors.margins: units.gu(2)
                     spacing: units.gu(2)
 
-                    TextField {
-                        id: input
-                        placeholderText: "Enter task..."
-                    }
+                    TextField { id: input; placeholderText: "Task title" }
+                    TextField { id: descInput; placeholderText: "Description" }
+                    TextField { id: dateInput; placeholderText: "YYYY-MM-DD" }
+                    TextField { id: timeInput; placeholderText: "HH:MM" }
 
                     Button {
                         text: "Add Task"
                         onClicked: {
                             if (input.text !== "") {
-                                addTask(input.text)
+                                addTask(input.text, descInput.text, dateInput.text, timeInput.text)
                                 loadTasks()
                                 input.text = ""
+                                descInput.text = ""
+                                dateInput.text = ""
+                                timeInput.text = ""
                             }
                         }
                     }
@@ -179,24 +158,33 @@ MainView {
 
                         delegate: Rectangle {
                             width: parent.width
-                            height: units.gu(6)
+                            height: units.gu(10)
+                            radius: 10
                             color: "#C8E6C9"
-                            radius: 8
 
-                            Row {
-                                anchors.fill: parent
-                                anchors.margins: units.gu(1)
-                                spacing: units.gu(1)
+                            Column {
+                                width: parent.width
+                                spacing: 2
 
-                                CheckBox {
-                                    checked: done
-                                    onCheckedChanged: {
-                                        updateTask(id, checked ? 1 : 0)
-                                        loadTasks()
+                                Row {
+                                    spacing: units.gu(1)
+
+                                    CheckBox {
+                                        checked: done
+                                        onCheckedChanged: {
+                                            updateTask(id, checked ? 1 : 0)
+                                            loadTasks()
+                                        }
+                                    }
+
+                                    Text {
+                                        text: name
+                                        font.bold: true
                                     }
                                 }
 
-                                Text { text: name }
+                                Text { text: description; font.pixelSize: 14; color: "#555" }
+                                Text { text: date + " " + time; font.pixelSize: 12; color: "#777" }
 
                                 Button {
                                     text: "Delete"
@@ -263,10 +251,7 @@ MainView {
                         text: "Add"
                         onClicked: {
                             if (name.text !== "" && amount.text !== "") {
-                                expenseModel.append({
-                                    name: name.text,
-                                    amount: amount.text
-                                })
+                                expenseModel.append({ name: name.text, amount: amount.text })
                                 name.text = ""
                                 amount.text = ""
                             }
