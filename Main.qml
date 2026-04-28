@@ -1,3 +1,4 @@
+
 import QtQuick 2.7
 import Lomiri.Components 1.3
 import QtQuick.LocalStorage 2.0
@@ -33,30 +34,62 @@ MainView {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    function navButton(text, color, page) {
-                        return Rectangle {
-                            width: units.gu(25)
-                            height: units.gu(6)
-                            radius: 12
-                            color: color
+                    // Button 1
+                    Rectangle {
+                        width: units.gu(25)
+                        height: units.gu(6)
+                        radius: 12
+                        color: "#4CAF50"
 
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: pageStack.push(page)
-                            }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: pageStack.push(plannerPage)
+                        }
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: text
-                                color: "white"
-                                font.pixelSize: 18
-                            }
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Daily Planner"
+                            color: "white"
                         }
                     }
 
-                    navButton("Daily Planner", "#4CAF50", plannerPage)
-                    navButton("Habit Tracker", "#2196F3", habitPage)
-                    navButton("Expense Tracker", "#FF9800", expensePage)
+                    // Button 2
+                    Rectangle {
+                        width: units.gu(25)
+                        height: units.gu(6)
+                        radius: 12
+                        color: "#2196F3"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: pageStack.push(habitPage)
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Habit Tracker"
+                            color: "white"
+                        }
+                    }
+
+                    // Button 3
+                    Rectangle {
+                        width: units.gu(25)
+                        height: units.gu(6)
+                        radius: 12
+                        color: "#FF9800"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: pageStack.push(expensePage)
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Expense Tracker"
+                            color: "white"
+                        }
+                    }
                 }
             }
         }
@@ -140,6 +173,7 @@ MainView {
                         text: "Add Task"
                         onClicked: {
                             if (taskInput.text !== "") {
+
                                 var priority = priorityBox.model[priorityBox.selectedIndex]
 
                                 taskModel.append({
