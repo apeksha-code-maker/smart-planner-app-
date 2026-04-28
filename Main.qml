@@ -54,163 +54,207 @@ MainView {
         }
 
         // ---------------- PLANNER PAGE ----------------
-        Component {
-            id: plannerPage
+       Component {
+    id: plannerPage
 
-            Page {
+    Page {
 
-                property string currentFilter: "all"
+        property string currentFilter: "all"
 
-                function todayStr() {
-                    var d = new Date();
-                    var mm = String(d.getMonth() + 1).padStart(2, '0');
-                    var dd = String(d.getDate()).padStart(2, '0');
-                    return d.getFullYear() + "-" + mm + "-" + dd;
-                }
+        function todayStr() {
+            var d = new Date();
+            var mm = String(d.getMonth() + 1).padStart(2, '0');
+            var dd = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + "-" + mm + "-" + dd;
+        }
 
-                function getDatabase() {
-                    return LocalStorage.openDatabaseSync("SmartPlannerDB", "1.0", "Tasks DB", 1000000);
-                }
+        function getDatabase() {
+            return LocalStorage.openDatabaseSync("SmartPlannerDB", "1.0", "Tasks DB", 1000000);
+        }
 
-                function createTable() {
-                    var db = getDatabase();
-                    db.transaction(function(tx) {
-                        tx.executeSql('DROP TABLE IF EXISTS tasks');
-                        tx.executeSql('CREATE TABLE tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT, done INTEGER, priority TEXT, date TEXT, time TEXT)');
+        function createTable() {
+            var db = getDatabase();
+            db.transaction(function(tx) {
+                tx.executeSql(
+                    'CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT, done INTEGER, priority TEXT, date TEXT, time TEXT)'
+                );
+            });
+        }
+
+        function insertTask(name, description, done, priority, date, time) {
+            var db = getDatabase();
+            db.transaction(function(tx) {
+                tx.executeSql(
+                    'INSERT INTO tasks(name, description, done, priority, date, time) VALUES(?, ?, ?, ?, ?, ?)',
+                    [name, description, done, priority, date, time]
+                );
+            });
+        }
+
+        function updateTask(id, done) {
+            var db = getDatabase();
+            db.transaction(function(tx) {
+                tx.executeSql('UPDATE tasks SET done=? WHERE id=?', [done, id]);
+            });
+        }
+
+        function deleteTask(id) {
+            var db = getDatabase();
+            db.transaction(function(tx) {
+                tx.executeSql('DELETE FROM tasks WHERE id=?', [id]);
+            });
+        }
+
+        function loadTasks() {
+            var db = getDatabase();
+            taskModel.clear();
+
+            db.transaction(function(tx) {
+
+                var query = "SELECT * FROM tasks";
+
+                if (currentFilter === "pending") query += " WHERE done=0";
+                else if (currentFilter === "done") query += " WHERE done=1";
+
+                query += " ORDER BY date ASC, time ASC";
+
+                var results = tx.executeSql(query);
+
+                for (var i = 0; i < results.rows.length; i++) {
+                    var item = results.rows.item(i);
+                    taskModel.append({
+                        id: item.id,
+                        name: item.name,
+                        description: item.description,
+                        done: item.done,
+                        priority: item.priority,
+                        date: item.date,
+                        time: item.time
                     });
                 }
+            });
+        }
 
-                function insertTask(name, description, done, priority, date, time) {
-                    var db = getDatabase();
-                    db.transaction(function(tx) {
-                        tx.executeSql('INSERT INTO tasks(name, description, done, priority, date, time) VALUES(?, ?, ?, ?, ?, ?)',
-                        [name, description, done, priority, date, time]);
-                    });
+        Component.onCompleted: {
+            createTable();
+            loadTasks();
+        }
+
+        header: PageHeader { title: "Daily Planner" }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: units.gu(2)
+            spacing: units.gu(2)
+
+            // INPUTS
+            TextField { id: taskInput; placeholderText: "Task title" }
+            TextField { id: descInput; placeholderText: "Description" }
+            TextField { id: dateInput; placeholderText: "YYYY-MM-DD" }
+            TextField { id: timeInput; placeholderText: "HH:MM" }
+
+            OptionSelector {
+                id: priorityBox
+                model: ["Low", "High"]
+            }
+
+            Button {
+                text: "Add Task"
+                onClicked: {
+                    if (taskInput.text !== "") {
+
+                        var priority = priorityBox.model[priorityBox.selectedIndex]
+
+                        insertTask(
+                            taskInput.text,
+                            descInput.text,
+                            0,
+                            priority,
+                            dateInput.text,
+                            timeInput.text
+                        )
+
+                        loadTasks()
+
+                        taskInput.text = ""
+                        descInput.text = ""
+                        dateInput.text = ""
+                        timeInput.text = ""
+                    }
                 }
+            }
 
-                function updateTask(id, done) {
-                    var db = getDatabase();
-                    db.transaction(function(tx) {
-                        tx.executeSql('UPDATE tasks SET done=? WHERE id=?', [done, id]);
-                    });
-                }
+            // FILTER BUTTONS
+            Row {
+                spacing: units.gu(1)
 
-                function deleteTask(id) {
-                    var db = getDatabase();
-                    db.transaction(function(tx) {
-                        tx.executeSql('DELETE FROM tasks WHERE id=?', [id]);
-                    });
-                }
+                Button { text: "All"; onClicked: { currentFilter = "all"; loadTasks(); } }
+                Button { text: "Pending"; onClicked: { currentFilter = "pending"; loadTasks(); } }
+                Button { text: "Done"; onClicked: { currentFilter = "done"; loadTasks(); } }
+            }
 
-                function loadTasks() {
-                    var db = getDatabase();
-                    taskModel.clear();
+            ListModel { id: taskModel }
 
-                    db.transaction(function(tx) {
-                        var query = "SELECT * FROM tasks";
+            // TASK LIST
+            ListView {
+                anchors.fill: parent
+                model: taskModel
 
-                        if (currentFilter === "pending") query += " WHERE done=0";
-                        else if (currentFilter === "done") query += " WHERE done=1";
+                delegate: Rectangle {
+                    width: parent.width
+                    height: units.gu(10)
+                    radius: 10
 
-                        query += " ORDER BY date ASC, time ASC";
+                    color: (date === todayStr())
+                           ? "#FFF9C4"
+                           : (priority === "High" ? "#FFCDD2" : "#C8E6C9")
 
-                        var results = tx.executeSql(query);
+                    Column {
+                        width: parent.width
+                        spacing: units.gu(0.5)
 
-                        for (var i = 0; i < results.rows.length; i++) {
-                            var item = results.rows.item(i);
-                            taskModel.append(item);
-                        }
-                    });
-                }
+                        Row {
+                            spacing: units.gu(1)
 
-                Component.onCompleted: {
-                    createTable();
-                    loadTasks();
-                }
+                            CheckBox {
+                                checked: done
+                                onCheckedChanged: {
+                                    updateTask(id, checked ? 1 : 0)
+                                    loadTasks()
+                                }
+                            }
 
-                header: PageHeader { title: "Daily Planner" }
-
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: units.gu(2)
-                    spacing: units.gu(2)
-
-                    TextField { id: taskInput; placeholderText: "Task title" }
-                    TextField { id: descInput; placeholderText: "Description" }
-                    TextField { id: dateInput; placeholderText: "YYYY-MM-DD" }
-                    TextField { id: timeInput; placeholderText: "HH:MM" }
-
-                    OptionSelector { id: priorityBox; model: ["Low", "High"] }
-
-                    Button {
-                        text: "Add Task"
-                        onClicked: {
-                            if (taskInput.text !== "") {
-                                var priority = priorityBox.model[priorityBox.selectedIndex]
-                                insertTask(taskInput.text, descInput.text, 0, priority, dateInput.text, timeInput.text)
-                                loadTasks()
-                                taskInput.text = ""
-                                descInput.text = ""
-                                dateInput.text = ""
-                                timeInput.text = ""
+                            Text {
+                                text: name
+                                font.bold: true
                             }
                         }
-                    }
 
-                    Row {
-                        spacing: units.gu(1)
-                        Button { text: "All"; onClicked: { currentFilter="all"; loadTasks(); } }
-                        Button { text: "Pending"; onClicked: { currentFilter="pending"; loadTasks(); } }
-                        Button { text: "Done"; onClicked: { currentFilter="done"; loadTasks(); } }
-                    }
+                        Text {
+                            text: description
+                            font.pixelSize: 14
+                            color: "#555"
+                        }
 
-                    ListModel { id: taskModel }
+                        Text {
+                            text: date + " " + time
+                            font.pixelSize: 12
+                            color: "#777"
+                        }
 
-                    ListView {
-                        anchors.fill: parent
-                        model: taskModel
-
-                        delegate: Rectangle {
-                            width: parent.width
-                            height: units.gu(10)
-                            radius: 10
-                            color: (date === todayStr()) ? "#FFF9C4" :
-                                   (priority === "High" ? "#FFCDD2" : "#C8E6C9")
-
-                            Column {
-                                width: parent.width
-                                anchors.margins: units.gu(1)
-
-                                Row {
-                                    spacing: units.gu(1)
-
-                                    CheckBox {
-                                        checked: done
-                                        onCheckedChanged: {
-                                            updateTask(id, checked ? 1 : 0)
-                                            loadTasks()
-                                        }
-                                    }
-
-                                    Text { text: name; font.bold: true }
-                                }
-
-                                Text { text: description }
-                                Text { text: date + " " + time }
-
-                                Button {
-                                    text: "Delete"
-                                    onClicked: {
-                                        deleteTask(id)
-                                        loadTasks()
-                                    }
-                                }
+                        Button {
+                            text: "Delete"
+                            onClicked: {
+                                deleteTask(id)
+                                loadTasks()
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
 
         // ---------------- HABIT PAGE ----------------
         Component {
