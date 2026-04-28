@@ -27,21 +27,15 @@ MainView {
                     spacing: units.gu(3)
 
                     Text {
-                        text: "VERSION 2 🔥"
-                        color: "red"
-                    }
-
-                    Text {
-                        text: "Welcome 👋"
-                        font.pixelSize: 30
+                        text: "Smart Planner"
+                        font.pixelSize: 28
                         color: "#2E7D32"
                     }
 
+                    // Planner
                     Rectangle {
-                        width: units.gu(25)
-                        height: units.gu(6)
-                        radius: 12
-                        color: "#4CAF50"
+                        width: units.gu(25); height: units.gu(6)
+                        radius: 12; color: "#4CAF50"
 
                         MouseArea {
                             anchors.fill: parent
@@ -54,22 +48,56 @@ MainView {
                             color: "white"
                         }
                     }
+
+                    // Habit
+                    Rectangle {
+                        width: units.gu(25); height: units.gu(6)
+                        radius: 12; color: "#2196F3"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: pageStack.push(habitPage)
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Habit Tracker"
+                            color: "white"
+                        }
+                    }
+
+                    // Expense
+                    Rectangle {
+                        width: units.gu(25); height: units.gu(6)
+                        radius: 12; color: "#FF9800"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: pageStack.push(expensePage)
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Expense Tracker"
+                            color: "white"
+                        }
+                    }
                 }
             }
         }
 
-        // ---------------- PLANNER PAGE ----------------
+        // ---------------- DAILY PLANNER ----------------
         Component {
             id: plannerPage
 
             Page {
 
-                function getDatabase() {
-                    return LocalStorage.openDatabaseSync("SmartPlannerDB", "1.0", "Tasks DB", 1000000);
+                function getDB() {
+                    return LocalStorage.openDatabaseSync("PlannerDB", "1.0", "Tasks", 100000);
                 }
 
                 function createTable() {
-                    var db = getDatabase();
+                    var db = getDB();
                     db.transaction(function(tx) {
                         tx.executeSql(
                             'CREATE TABLE IF NOT EXISTS tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, done INTEGER)'
@@ -77,49 +105,39 @@ MainView {
                     });
                 }
 
-                function insertTask(name) {
-                    var db = getDatabase();
+                function addTask(name) {
+                    var db = getDB();
                     db.transaction(function(tx) {
-                        tx.executeSql(
-                            'INSERT INTO tasks(name, done) VALUES(?, ?)',
-                            [name, 0]
-                        );
+                        tx.executeSql('INSERT INTO tasks(name, done) VALUES(?,0)', [name]);
                     });
                 }
 
                 function updateTask(id, done) {
-                    var db = getDatabase();
+                    var db = getDB();
                     db.transaction(function(tx) {
-                        tx.executeSql(
-                            'UPDATE tasks SET done=? WHERE id=?',
-                            [done, id]
-                        );
+                        tx.executeSql('UPDATE tasks SET done=? WHERE id=?', [done, id]);
                     });
                 }
 
                 function deleteTask(id) {
-                    var db = getDatabase();
+                    var db = getDB();
                     db.transaction(function(tx) {
-                        tx.executeSql(
-                            'DELETE FROM tasks WHERE id=?',
-                            [id]
-                        );
+                        tx.executeSql('DELETE FROM tasks WHERE id=?', [id]);
                     });
                 }
 
                 function loadTasks() {
-                    var db = getDatabase();
+                    var db = getDB();
                     taskModel.clear();
 
                     db.transaction(function(tx) {
-                        var results = tx.executeSql('SELECT * FROM tasks');
-
-                        for (var i = 0; i < results.rows.length; i++) {
-                            var item = results.rows.item(i);
+                        var rs = tx.executeSql('SELECT * FROM tasks');
+                        for (var i = 0; i < rs.rows.length; i++) {
+                            var row = rs.rows.item(i);
                             taskModel.append({
-                                id: item.id,
-                                name: item.name,
-                                done: item.done
+                                id: row.id,
+                                name: row.name,
+                                done: row.done
                             });
                         }
                     });
@@ -138,17 +156,17 @@ MainView {
                     spacing: units.gu(2)
 
                     TextField {
-                        id: taskInput
+                        id: input
                         placeholderText: "Enter task..."
                     }
 
                     Button {
                         text: "Add Task"
                         onClicked: {
-                            if (taskInput.text !== "") {
-                                insertTask(taskInput.text)
+                            if (input.text !== "") {
+                                addTask(input.text)
                                 loadTasks()
-                                taskInput.text = ""
+                                input.text = ""
                             }
                         }
                     }
@@ -162,8 +180,8 @@ MainView {
                         delegate: Rectangle {
                             width: parent.width
                             height: units.gu(6)
-                            radius: 8
                             color: "#C8E6C9"
+                            radius: 8
 
                             Row {
                                 anchors.fill: parent
@@ -178,9 +196,7 @@ MainView {
                                     }
                                 }
 
-                                Text {
-                                    text: name
-                                }
+                                Text { text: name }
 
                                 Button {
                                     text: "Delete"
@@ -190,6 +206,83 @@ MainView {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ---------------- HABIT TRACKER ----------------
+        Component {
+            id: habitPage
+
+            Page {
+                header: PageHeader { title: "Habit Tracker" }
+
+                ListModel {
+                    id: habitModel
+                    ListElement { name: "Drink Water"; done: false }
+                    ListElement { name: "Exercise"; done: false }
+                }
+
+                ListView {
+                    anchors.fill: parent
+                    model: habitModel
+
+                    delegate: Row {
+                        spacing: units.gu(1)
+
+                        CheckBox {
+                            checked: done
+                            onCheckedChanged: {
+                                habitModel.setProperty(index, "done", checked)
+                            }
+                        }
+
+                        Text { text: name }
+                    }
+                }
+            }
+        }
+
+        // ---------------- EXPENSE TRACKER ----------------
+        Component {
+            id: expensePage
+
+            Page {
+                header: PageHeader { title: "Expense Tracker" }
+
+                Column {
+                    anchors.fill: parent
+                    spacing: units.gu(2)
+
+                    TextField { id: name; placeholderText: "Expense" }
+                    TextField { id: amount; placeholderText: "Amount" }
+
+                    Button {
+                        text: "Add"
+                        onClicked: {
+                            if (name.text !== "" && amount.text !== "") {
+                                expenseModel.append({
+                                    name: name.text,
+                                    amount: amount.text
+                                })
+                                name.text = ""
+                                amount.text = ""
+                            }
+                        }
+                    }
+
+                    ListModel { id: expenseModel }
+
+                    ListView {
+                        anchors.fill: parent
+                        model: expenseModel
+
+                        delegate: Row {
+                            spacing: units.gu(2)
+                            Text { text: name }
+                            Text { text: "₹ " + amount }
                         }
                     }
                 }
